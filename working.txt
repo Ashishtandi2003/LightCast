@@ -1,0 +1,165 @@
+import { useRef, useEffect, useState } from "react";
+import "./App.css";
+
+function App() {
+  const videoRef = useRef(null);
+  const [videoURL, setVideoURL] = useState(null);
+  const [showSpeed, setShowSpeed] = useState(false);
+  const [overlayText, setOverlayText] = useState("");
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setVideoURL(url);
+    }
+  };
+
+  const showOverlay = (text) => {
+    setOverlayText(text);
+    setShowSpeed(true);
+    setTimeout(() => {
+      setShowSpeed(false);
+    }, 2000);
+  };
+
+  const toggleFullScreen = () => {
+    const video = videoRef.current;
+    if (!document.fullscreenElement) {
+      video.requestFullscreen().catch((err) => {
+        console.error("Failed to enter fullscreen:", err);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  };
+
+  const togglePlayPause = () => {
+    const video = videoRef.current;
+    if (video.paused) {
+      video.play();
+    } else {
+      video.pause();
+    }
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      const video = videoRef.current;
+      const tag = document.activeElement.tagName;
+  
+      if (!video || tag === "INPUT" || tag === "TEXTAREA") return;
+  
+      const keysToPrevent = [
+        " ", "Escape", "f", "F", "ArrowUp", "ArrowDown",
+        "ArrowLeft", "ArrowRight", "Enter"
+      ];
+  
+      if (keysToPrevent.includes(e.key)) {
+        e.preventDefault();
+      }
+  
+      // Spacebar Play/Pause
+      if (e.key === " " && !e.repeat) {
+        togglePlayPause();
+      }
+  
+      // Skip using code (works regardless of Shift)
+      switch (e.code) {
+        case "Period": // >
+          video.currentTime += 5;
+          showOverlay(">> 5s");
+          break;
+        case "Comma": // <
+          video.currentTime -= 5;
+          showOverlay("<< 5s");
+          break;
+      }
+  
+      // Arrow key skipping
+      switch (e.key) {
+        case "ArrowRight":
+          video.currentTime += 5;
+          showOverlay(">> 5s");
+          break;
+        case "ArrowLeft":
+          video.currentTime -= 5;
+          showOverlay("<< 5s");
+          break;
+        case "+":
+          if (video.playbackRate < 3) {
+            video.playbackRate += 0.25;
+            showOverlay(`${video.playbackRate.toFixed(2)}x`);
+          }
+          break;
+        case "-":
+          if (video.playbackRate > 0.25) {
+            video.playbackRate -= 0.25;
+            showOverlay(`${video.playbackRate.toFixed(2)}x`);
+          }
+          break;
+        case "ArrowUp":
+          video.volume = Math.min(1, video.volume + 0.1);
+          showOverlay(`🔊 ${Math.round(video.volume * 100)}%`);
+          break;
+        case "ArrowDown":
+          video.volume = Math.max(0, video.volume - 0.1);
+          showOverlay(`🔉 ${Math.round(video.volume * 100)}%`);
+          break;
+        case "Enter":
+          toggleFullScreen();
+          break;
+      }
+    };
+  
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+  
+
+  return (
+    <div className="container">
+      <h1>🎬 Custom Video Player</h1>
+      <input type="file" accept="video/*" onChange={handleFileChange} />
+      {videoURL ? (
+        <div className="video-wrapper">
+        <video
+  ref={videoRef}
+  className="video-player"
+  src={videoURL}
+  tabIndex={-1}
+  onClick={(e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    videoRef.current.blur(); // prevent focus stealing
+  }}
+  onDoubleClick={(e) => {
+    e.preventDefault();
+    togglePlayPause(); // Double-click toggles play/pause
+  }}
+/>
+
+          {showSpeed && <div className="overlay">{overlayText}</div>}
+        </div>
+      ) : (
+        <p className="placeholder">Choose a video to play</p>
+      )}
+
+      <div className="info">
+        <p>
+          <strong>Keyboard Shortcuts:</strong>
+        </p>
+        <ul>
+          <li>Spacebar: Play / Pause</li>
+          <li>&gt; / &lt; : Skip +5s / -5s</li>
+          <li>+ / - : Speed up / down</li>
+          <li>↑ / ↓ : Volume up / down</li>
+          <li>Enter: Toggle fullscreen</li>
+          <li>Double-click: Play / Pause</li>
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+export default App;
