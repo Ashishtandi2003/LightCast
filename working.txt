@@ -6,6 +6,8 @@ function App() {
   const [videoURL, setVideoURL] = useState(null);
   const [showSpeed, setShowSpeed] = useState(false);
   const [overlayText, setOverlayText] = useState("");
+  const [saturation, setSaturation] = useState(100); // 100% by default
+
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -50,36 +52,36 @@ function App() {
   
       if (!video || tag === "INPUT" || tag === "TEXTAREA") return;
   
-      const keysToPrevent = [
-        " ", "Escape", "f", "F", "ArrowUp", "ArrowDown",
-        "ArrowLeft", "ArrowRight", "Enter"
-      ];
+      // const keysToPrevent = [
+      //   " ", "Escape", "f", "F", "ArrowUp", "ArrowDown",
+      //   "ArrowLeft", "ArrowRight", "Enter"
+      // ];
   
-      if (keysToPrevent.includes(e.key)) {
-        e.preventDefault();
+      if (e.key === " " && tag !== "INPUT" && tag !== "TEXTAREA") {
+        e.preventDefault(); // prevent page scroll
       }
+      
   
       // Spacebar Play/Pause
       if (e.key === " " && !e.repeat) {
         togglePlayPause();
       }
+
+      // if (e.key === 'ArrowRight') {
+      //   videoRef.current.currentTime += 10;
+      // }
   
-      // Skip using code (works regardless of Shift)
-      switch (e.code) {
-        case "Period": // >
-          video.currentTime += 5;
-          showOverlay(">> 5s");
-          break;
-        case "Comma": // <
-          video.currentTime -= 5;
-          showOverlay("<< 5s");
-          break;
-      }
+      // // ArrowLeft: Skip backward 10 seconds
+      // if (e.key === 'ArrowLeft') {
+      //   videoRef.current.currentTime -= 10;
+      // }
+  
+    
   
       // Arrow key skipping
       switch (e.key) {
         case "ArrowRight":
-          video.currentTime += 5;
+          video.currentTime += 5 ;
           showOverlay(">> 5s");
           break;
         case "ArrowLeft":
@@ -119,14 +121,20 @@ function App() {
 
   return (
     <div className="container">
-      <h1>🎬 Custom Video Player</h1>
-      <input type="file" accept="video/*" onChange={handleFileChange} />
+      <h1>🎬 Ashish Video Player</h1>
+      <label className="custom-file-upload">
+  🎥 Choose Video File
+  <input type="file" accept="video/*" onChange={handleFileChange} />
+</label>
+
       {videoURL ? (
         <div className="video-wrapper">
         <video
   ref={videoRef}
   className="video-player"
   src={videoURL}
+  style={{ filter: `saturate(${saturation}%)` }}
+  controls
   tabIndex={-1}
   onClick={(e) => {
     e.preventDefault();
@@ -138,6 +146,18 @@ function App() {
     togglePlayPause(); // Double-click toggles play/pause
   }}
 />
+<div className="slider-container">
+  <label htmlFor="saturation">🎨 Saturation: {saturation}%</label>
+  <input
+    type="range"
+    id="saturation"
+    min="0"
+    max="200"
+    value={saturation}
+    onChange={(e) => setSaturation(e.target.value)}
+  />
+</div>
+
 
           {showSpeed && <div className="overlay">{overlayText}</div>}
         </div>
@@ -154,7 +174,7 @@ function App() {
           <li>&gt; / &lt; : Skip +5s / -5s</li>
           <li>+ / - : Speed up / down</li>
           <li>↑ / ↓ : Volume up / down</li>
-          <li>Enter: Toggle fullscreen</li>
+          <li>Enter: fullscreen / esc</li>
           <li>Double-click: Play / Pause</li>
         </ul>
       </div>
